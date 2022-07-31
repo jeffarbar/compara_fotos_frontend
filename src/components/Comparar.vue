@@ -33,16 +33,42 @@
     <div class="camera-panel">
       <br>
       <img class="img" v-if="url_selfie" :src="url_selfie" alt="camera-img"/>&nbsp;
-      <font color="#008000" v-if="resultado && resultado.code == 0 && resultado.message == 'Deu Match'"><strong> {{resultado.message}} </strong></font>
-      <font color="#B22222" v-if="resultado && resultado.code == 0 && resultado.message == 'Não Deu Match'"><strong> {{resultado.message}} </strong></font>
+      
+      <table>
+          <tr>
+              <td style="text-align: center; vertical-align: middle;">
+                  <font color="#008000" v-if="resultado && resultado.code == 0 && resultado.message == 'Deu Match'"><strong> {{resultado.message}} </strong></font>
+                  <font color="#B22222" v-if="resultado && resultado.code == 0 && resultado.message == 'Não Deu Match'"><strong> {{resultado.message}} </strong></font>
+              </td>
+          </tr>
+          <tr>
+              <td style="text-align: center; vertical-align: middle; color: #0066FF;">
+                <p v-if="resultado && resultado.diretorio_uuid">
+                  &nbsp;
+                  Qual o seu feedback?
+                  <br><br>
+                  <a href="#void"  @click="onAvaliacao(true)">
+                    <img src="@/assets/images/avaliacao_positivo.png" alt="Positivo" class="img_positivo_negativo">
+                  </a>
+                  &nbsp;
+                  <a href="#void"  @click="onAvaliacao(false)">
+                    <img src="@/assets/images/avaliacao_negativo.png" alt="Negativo" class="img_positivo_negativo">
+                  </a>
+                </p>
+              </td>
+          </tr>
+      </table>  
+
       &nbsp;<img class="img" v-if="url_foto" :src="url_foto" alt="documento-img"/>
+
     </div>
     
+
     <p class="camera-panel" v-if="resultado && resultado.code == 1"> {{resultado.message}} </p>
    
     <div class="camera-panel">
       <br>
-      <button v-if="this.foto && this.url_selfie" class="button" @click="onComparar">Comparar</button>
+      <button v-if="this.showComparar" class="button" @click="onComparar">Comparar</button>
       <button v-if="this.foto || this.url_selfie" class="button" @click="onClear">Voltar</button>
     </div>
     <br>  
@@ -61,6 +87,7 @@ export default {
 
   data() {
     return {
+      showComparar:false,
       cameraStart:true,
       url_selfie: null,
       camera: null,
@@ -150,8 +177,28 @@ export default {
       this.$refs.webcam.start();
     },
     
-    async onComparar(){
+    onAvaliacao(avaliacao){
 
+      const URL = "https://comparafoto-tech.herokuapp.com/avaliacao?";
+
+      const params = new URLSearchParams({
+          uuid: this.resultado.diretorio_uuid,
+          avaliacao: avaliacao
+        }).toString();
+
+      axios.post(URL + params)
+        .then((res) => {
+            console.log(res.data)
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+
+        this.onClear()
+
+    },
+
+    async onComparar(){
 
       let selfie = this.dataURLtoFile(this.url_selfie, 'selfie.jpeg')
 
@@ -172,6 +219,7 @@ export default {
 
       console.log(res.data);
       this.resultado = res.data
+      this.showComparar = false;
 
     },
 
@@ -193,7 +241,7 @@ export default {
     onFileChange(e) {
       this.foto = e.target.files[0];
       this.url_foto = URL.createObjectURL(this.foto);
-
+      this.showComparar = true
     }
 
   },
@@ -204,6 +252,11 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+
+.img_positivo_negativo {
+  width:42px;
+  height:42px;
+}
 
 .cabecalho {
 
@@ -254,6 +307,10 @@ export default {
     cursor: pointer;
   }
 
+.img_pequeno {
+    width: 10px;
+    height: 10px; 
+}
 .img {
   border: 1px solid #ddd;
   border-radius: 4px;
